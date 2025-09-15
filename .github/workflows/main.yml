@@ -21,21 +21,23 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-      with:
-        packages: 'platform-tools;platforms;android-30;build-tools;30.0.3'
+    - name: Install Android SDK
+      run: |
+        wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+        unzip commandlinetools-latest.zip
+        mkdir -p android-sdk/cmdline-tools
+        mv cmdline-tools android-sdk/cmdline-tools/latest
+        echo "ANDROID_HOME=$PWD/android-sdk" >> $GITHUB_ENV
+        echo "$PWD/android-sdk/cmdline-tools/latest/bin:$PWD/android-sdk/platform-tools" >> $GITHUB_PATH
         
-    - name: Cache Gradle packages
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
-          
+    - name: Accept Android SDK licenses
+      run: |
+        yes | android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+        
+    - name: Install Android platform and build tools
+      run: |
+        android-sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-30" "build-tools;30.0.3"
+        
     - name: Install Gradle
       run: |
         wget https://services.gradle.org/distributions/gradle-8.0-bin.zip
@@ -43,14 +45,12 @@ jobs:
         echo "GRADLE_HOME=$PWD/gradle-8.0" >> $GITHUB_ENV
         echo "$PWD/gradle-8.0/bin" >> $GITHUB_PATH
         
-    - name: Build Debug APK
-      run: gradle assembleDebug --stacktrace
-      
-    - name: Verify APK
+    - name: Build Universal APK
       run: |
+        gradle assembleDebug --stacktrace
+        echo "APK built successfully!"
         ls -la app/build/outputs/apk/debug/
         file app/build/outputs/apk/debug/app-debug.apk
-        echo "APK size: $(du -h app/build/outputs/apk/debug/app-debug.apk | cut -f1)"
         
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
