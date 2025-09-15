@@ -21,7 +21,13 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         
-    - name: Install Android SDK (Smaller version)
+    - name: Clear conflicting Android SDK paths
+      run: |
+        unset ANDROID_SDK_ROOT
+        unset ANDROID_HOME
+        echo "Cleared conflicting SDK paths"
+        
+    - name: Install Android SDK
       run: |
         wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
         unzip commandlinetools-linux-8512546_latest.zip
